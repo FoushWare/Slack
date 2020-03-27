@@ -1,0 +1,47 @@
+version: "3.6"
+services: 
+    db:
+        image: postgres
+        environment: 
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_DB: slack-clone
+        volumes: 
+            - ./pgdata:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+    
+    server:
+        build: 
+            context: ./BackEnd__Slack-clone
+            dockerfile: Dockerfile
+        depends_on: 
+            - db
+        ports:
+            - "8081:8081"
+        volumes: 
+            - './BackEnd__Slack-clone:/usr/src/app'
+            - '/usr/src/app/node_modules'
+        environment:
+            - NODE_ENV=development
+            - CHOKIDAR_USEPOLLING=true    
+
+        # command: npm run start
+
+    client:
+        build: 
+            context: ./client__slack_clone
+            dockerfile: Dockerfile
+        depends_on: 
+            - server
+        stdin_open: true
+        environment:
+            - NODE_ENV=development
+            - CHOKIDAR_USEPOLLING=true
+        ports: 
+            - "3000:3000"
+        volumes: 
+            - './client__slack_clone:/usr/src/app'
+            - '/usr/src/app/node_modules'
+        # command: npm run start
+
