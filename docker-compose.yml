@@ -1,7 +1,13 @@
-version: "3.6"
+version: "3"
 services: 
+    redis:
+        image: redis
+        command: ["redis-server"]
+
+        
     db:
         image: postgres
+        
         environment: 
             POSTGRES_PASSWORD: postgres
             POSTGRES_USER: postgres
@@ -9,28 +15,32 @@ services:
         volumes: 
             - ./pgdata:/var/lib/postgresql/data
         ports:
-            - "5432:5432"
-    
+            - "5432"
+
     server:
         build: 
-            context: ./BackEnd__Slack-clone
+            context: ./BackEnd__slack_clone_graphql
             dockerfile: Dockerfile
         depends_on: 
+            - redis
             - db
         ports:
             - "8081:8081"
+        
         volumes: 
-            - './BackEnd__Slack-clone:/usr/src/app'
+            - './BackEnd__slack_clone_graphql:/usr/src/app'
             - '/usr/src/app/node_modules'
         environment:
             - NODE_ENV=development
-            - CHOKIDAR_USEPOLLING=true    
-
+            - CHOKIDAR_USEPOLLING=true 
+            - DB_HOST= db
+            - REDIS_HOST= redis
+        command: ["./wait-for-it.sh", "db:5432", "--", "node", "index.js"]
         # command: npm run start
 
     client:
         build: 
-            context: ./client__slack_clone
+            context: ./Client__slack_clone
             dockerfile: Dockerfile
         depends_on: 
             - server
@@ -41,7 +51,6 @@ services:
         ports: 
             - "3000:3000"
         volumes: 
-            - './client__slack_clone:/usr/src/app'
+            - './Client__slack_clone:/usr/src/app'
             - '/usr/src/app/node_modules'
         # command: npm run start
-
